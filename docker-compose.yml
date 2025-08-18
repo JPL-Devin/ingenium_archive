@@ -1,0 +1,55 @@
+version: '2'
+
+services:
+  arangodb:
+    container_name: arangodb_archive
+    image: arangodb/arangodb
+    volumes:
+      - "./arangodb/data:/var/lib/arangodb3"
+      #- "./arangod.conf:/etc/arangodb3/arangod.conf"
+    environment:
+      - ARANGO_ROOT_PASSWORD=somepassword
+    ports:
+      - "8529:8529"
+    networks:
+      - archive
+  archive_ing:
+    build: ./
+    volumes:
+     - ./:/opt
+    environment:
+      - ARANGODBURL=http://arangodb:8529
+    restart: on-failure
+    networks:
+      - archive
+    depends_on:
+      - arangodb
+    ports:
+      - "8010:8010"
+  venue_config:
+    container_name: venue_config
+    image: dep/venue_config
+    volumes: 
+     - ./venue_stuff:/data_repo
+    environment:
+      - ROUTE_URIS=logstash://logstash:5000
+      - JWT_SECRET=
+      - REPO_PATH='/data_repo'
+    ports:
+      - "5151:5151"
+    networks:
+      - archive
+  redis:
+    image: redis:4
+    container_name: execution_redis
+    networks:
+      - archive
+    ports:
+      - "6379:6379"
+    logging:
+      options:
+        max-size: 10m
+
+networks:
+  archive:
+    driver: bridge

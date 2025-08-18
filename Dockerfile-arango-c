@@ -1,0 +1,7 @@
+### To build:
+# docker build -f Dockerfile-arango-c -t ingenium/arangodb:3.9.3c .
+### To publish
+# docker tag ingenium/arangodb:3.9.3c artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/ingenium/arangodb:3.9.3c
+# docker push artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/ingenium/arangodb:3.9.3c
+FROM arangodb/arangodb:3.9.3
+COPY arangod-c.conf /etc/arangodb3/arangod.conf

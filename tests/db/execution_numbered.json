@@ -1,0 +1,93 @@
+{
+  "_key": "ex1",
+  "_id": "execution/ex1",
+  "_rev": "_U2MxXKa---",
+  "name": "first execution",
+  "execution_id": "ex1",
+  "children": [
+    {
+      "_key": "s1",
+      "_id": "element/s1",
+      "_rev": "_U2MxXLC---",
+      "name": "section-1",
+      "children": [
+        {
+          "_key": "st1-1",
+          "_id": "element/st1-1",
+          "_rev": "_U2MxXLC--D",
+          "name": "step-1-1",
+          "children": [],
+          "parent_id": "element/s1",
+          "number": "1-1"
+        },
+        {
+          "_key": "st1-2",
+          "_id": "element/st1-2",
+          "_rev": "_U2MxXLC--E",
+          "name": "step-1-2",
+          "children": [],
+          "parent_id": "element/s1",
+          "number": "1-2"
+        },
+        {
+          "_key": "st1-3",
+          "_id": "element/st1-3",
+          "_rev": "_U2MxXLC--F",
+          "name": "step-1-3",
+          "children": [],
+          "parent_id": "element/s1",
+          "number": "1-3"
+        }
+      ],
+      "parent_id": "execution/ex1",
+      "number": "1"
+    },
+    {
+      "_key": "s2",
+      "_id": "element/s2",
+      "_rev": "_U2MxXLC--_",
+      "name": "section-2",
+      "children": [
+        {
+          "_key": "st2-1",
+          "_id": "element/st2-1",
+          "_rev": "_U2MxXLC--G",
+          "name": "step-2-1",
+          "children": [],
+          "parent_id": "element/s2",
+          "number": "2-1"
+        },
+        {
+          "_key": "st2-2",
+          "_id": "element/st2-2",
+          "_rev": "_U2MxXLC--H",
+          "name": "step-2-2",
+          "children": [],
+          "parent_id": "element/s2",
+          "number": "2-2"
+        }
+      ],
+      "parent_id": "execution/ex1",
+      "number": "2"
+    },
+    {
+      "_key": "s3",
+      "_id": "element/s3",
+      "_rev": "_U2MxXLC--A",
+      "name": "section-3",
+      "children": [
+        {
+          "_key": "st3-1",
+          "_id": "element/st3-1",
+          "_rev": "_U2MxXLC--I",
+          "name": "step-3-1",
+          "children": [],
+          "parent_id": "element/s3",
+          "number": "3-1"
+        }
+      ],
+      "parent_id": "execution/ex1",
+      "number": "3"
+    }
+  ]
+}

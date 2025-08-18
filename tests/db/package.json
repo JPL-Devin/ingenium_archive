@@ -1,0 +1,17 @@
+{
+  "name": "db",
+  "version": "1.0.0",
+  "description": "",
+  "main": "traverse_example.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "arangojs": "^5.6.0",
+    "fs-promise": "^2.0.2",
+    "promise": "^7.1.1",
+    "uuid": "^3.0.1"
+  }
+}
