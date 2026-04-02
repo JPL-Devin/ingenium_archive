@@ -2,7 +2,8 @@
 
 // Constants
 
-var uuid = require('node-uuid');
+var uuid = require('uuid');
+var { aql } = require('arangojs');
 var jwt = require('jsonwebtoken');
 var extend = require('extend');
 var deepcopy = require('deepcopy');
@@ -129,7 +130,7 @@ var importProcedureSection = async function(elem_id) {
 
   // Delete any child elements starting with immediate children
   try {
-    cursor = await step_order_collection.byExample({'_from': procedure_section._id});
+    cursor = await db.query(aql`FOR e IN ${step_order_collection} FILTER e._from == ${procedure_section._id} RETURN e`);
     edges = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get element edge from DB: ' + get_sj_error_message(err));
@@ -538,7 +539,7 @@ var createNewRun = async function (step_id, output) {
   }
 
   try {
-    cursor = await run_record_collection.byExample({'_from': step_idd});
+    cursor = await db.query(aql`FOR e IN ${run_record_collection} FILTER e._from == ${step_idd} RETURN e`);
     edges = await cursor.all();
     await run_record_collection.save({'_from': step_idd, '_to': record_elem_idd, 'idx': edges.length})
   } catch (err) {
@@ -2467,7 +2468,7 @@ var modifyElement = async function(execution_id, elem_id) {
   elem_original = elem;
     
   try {
-    cursor = await step_order_collection.byExample({'_to': elem_idd});
+    cursor = await db.query(aql`FOR e IN ${step_order_collection} FILTER e._to == ${elem_idd} RETURN e`);
     edges = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get parent element from DB: ' + get_sj_error_message(err)); 

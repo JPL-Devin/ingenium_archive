@@ -6,11 +6,9 @@
 // A traverse query is made to get hierarchical json structure of an "execution".
 // 2) If "ingenium_db_test" db exists, it will be dropped. This is done to reset the database for the next run.
 
-var arangojs = require('arangojs');
-var db = arangojs('http://localhost:8529');
+var { Database } = require('arangojs');
+var db = new Database({ url: 'http://localhost:8529', auth: { username: 'root', password: 'somepassword' } });
 var database_name = 'ingenium';
-
-db.useBasicAuth('root', 'somepassword');
 console.log('Run script');
 db.listDatabases()
 .then((names)=> {

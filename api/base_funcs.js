@@ -4,9 +4,9 @@ var jwt = require('jsonwebtoken');
 const winston = require('winston');
 const MESSAGE = Symbol.for('message');
 
-var arangojs = require('arangojs');
+var { Database, aql } = require('arangojs');
 var util = require('util');
-var uuid = require('node-uuid');
+var uuid = require('uuid');
 var extend = require('extend');
 var deepcopy = require('deepcopy');
 var definitions = require('../definitions.js');
@@ -35,7 +35,8 @@ String.prototype.format = function () {
   return this.replace(/\{(\d+)\}/g, function (m, n) { return args[n]; });
 };
 
-var db = arangojs(config.db_url);
+var systemDb = new Database({ url: config.db_url, auth: { username: config.db_user, password: config.db_password } });
+var db = systemDb.database(database_name);
 
 var venue_group_collection = db.collection(definitions.VENUE_GROUP);
 var venue_collection = db.collection(definitions.VENUE);
@@ -53,10 +54,7 @@ var procedure_step_order_collection = db.collection(definitions.PROCEDURE_STEP_O
 var procedure_version_collection = db.collection(definitions.PROCEDURE_VERSION);
 var has_version_collection = db.collection(definitions.HAS_VERSION);
 var procedure_collection = db.collection(definitions.PROCEDURE);
-var procedure_id_gen_collection = db.collection(definitions.PROCEDURE_ID_GEN); 
-
-db.useDatabase(database_name);
-db.useBasicAuth(config.db_user, config.db_password);
+var procedure_id_gen_collection = db.collection(definitions.PROCEDURE_ID_GEN);
 
 const custom_log_levels = {
   levels: {
@@ -533,10 +531,8 @@ async function get_db_list(count, milisecs) {
     return Promise.reject('Failed to connect db: ' + config.db_url);
   }
 
-  db.useDatabase('_system');
-
   try {
-    const names = await db.listUserDatabases();
+    const names = await systemDb.listUserDatabases();
     return Promise.resolve(names);
   } catch (err) {
     await wait_milisecs(milisecs);
@@ -552,11 +548,10 @@ async function get_db_list(count, milisecs) {
 */
 async function reset_db() {
   log.info('Reset DB');
-  db.useDatabase('_system');
-  const names = await db.listDatabases();
+  const names = await systemDb.listDatabases();
 
   if (names.indexOf(database_name) > -1) {
-    await db.dropDatabase(database_name);    
+    await systemDb.dropDatabase(database_name);    
     log.info(`Database dropped: ${database_name}`);
     await init_db();
   } else {
@@ -578,11 +573,9 @@ async function init_db() {
   if(names.indexOf(database_name) == -1) {
     // create DB
 
-    await db.createDatabase(database_name);
+    await systemDb.createDatabase(database_name);
 
     log.debug(`Database was created: ${database_name}`);
-    db.useDatabase(database_name);
-    log.debug(`Use database: ${database_name}`);
 
     log.debug(`definitions.EXECUTION_GRAPH: ${definitions.EXECUTION_GRAPH}`);
     await db.graph(definitions.EXECUTION_GRAPH).create(
@@ -681,8 +674,6 @@ async function init_db() {
     log.info('procedureLabel collection created.');
 
     log.info('DB was initialized.');
-  } else {
-    db.useDatabase(database_name);
   }
 }
 
@@ -1081,7 +1072,7 @@ var addElement = async function(root_type, root_id, input_elem, insert_after_id,
     } else {
       // SIBLING is default
       try {
-        cursor = await var_dict.step_order_collection.byExample({'_to': var_dict.element_prefix + insert_after_id});
+        cursor = await db.query(aql`FOR e IN ${var_dict.step_order_collection} FILTER e._to == ${var_dict.element_prefix + insert_after_id} RETURN e`);
         edges = await cursor.all();
       } catch (err) {
         return Promise.reject('Failed to get target parent from DB: ' + get_sj_error_message(err));
@@ -1311,7 +1302,7 @@ var moveElement = async function(root_type, root_id, source_elem_ids, insert_aft
       // SIBLING is default
       // Find the target parent
       try {
-        cursor = await var_dict.step_order_collection.byExample({'_to': var_dict.element_prefix + insert_after_id});
+        cursor = await db.query(aql`FOR e IN ${var_dict.step_order_collection} FILTER e._to == ${var_dict.element_prefix + insert_after_id} RETURN e`);
         edges = await cursor.all();
       } catch (err) {
         return Promise.reject('Failed to get target parent from DB: ' + get_sj_error_message(err));
@@ -1662,7 +1653,7 @@ var copyElement = async function(source_root_type, target_root_type, source_root
       // Find the target parent
 
       try {
-        let cursor = await target_var_dict.step_order_collection.byExample({'_to': target_var_dict.element_prefix + insert_after_id});
+        let cursor = await db.query(aql`FOR e IN ${target_var_dict.step_order_collection} FILTER e._to == ${target_var_dict.element_prefix + insert_after_id} RETURN e`);
         edges = await cursor.all();
       } catch (err) {
         return Promise.reject('Failed to get target parent from DB: ' + get_sj_error_message(err));
@@ -2623,7 +2614,7 @@ var deleteElement = async function(root_type, elem_id, check_redline) {
   }
 
   try {
-    cursor = await var_dict.step_order_collection.byExample({'_to': elem_idd});
+    cursor = await db.query(aql`FOR e IN ${var_dict.step_order_collection} FILTER e._to == ${elem_idd} RETURN e`);
     edges = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get parent edge from DB: ' + get_sj_error_message(err));
@@ -3678,7 +3669,7 @@ var collectOutlineElements = function(parent, elems) {
 var getParentIdd = async function(elem_idd, var_dict) {
   let edges = [];
   try {
-    const cursor = await var_dict.step_order_collection.byExample({'_to': elem_idd});
+    const cursor = await db.query(aql`FOR e IN ${var_dict.step_order_collection} FILTER e._to == ${elem_idd} RETURN e`);
     edges = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get parent edge from DB: ' + get_sj_error_message(err));

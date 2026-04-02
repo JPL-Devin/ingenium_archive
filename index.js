@@ -1,5 +1,5 @@
 'use strict';
-var avacado = require('arangojs');
+var { Database } = require('arangojs');
 var app = require('express')();
 var http = require('http');
 var swaggerTools = require('swagger-tools');
@@ -12,7 +12,7 @@ var bodyParser = require('body-parser');
 var base_funcs = require('./api/base_funcs');
 var node_funcs = require('./api/node_funcs');
 var util = require('util');
-const uuid = require('node-uuid');
+const uuid = require('uuid');
 var interceptor  = require('express-interceptor');
 var config = require('./config');
 var _ = require('lodash');
