@@ -1329,7 +1329,7 @@ var moveElement = async function(root_type, root_id, source_elem_ids, insert_aft
   if (target_parent_idd.startsWith(var_dict.element_prefix)) {
     let docs = null;
     try {
-      docs = await var_dict.element_collection.lookupByKeys([target_parent_id]);
+      docs = await var_dict.element_collection.documents([target_parent_id]);
     } catch (err) {
       return Promise.reject('Failed to get target parent element in DB: ' + get_sj_error_message(err));
     }
@@ -1680,7 +1680,7 @@ var copyElement = async function(source_root_type, target_root_type, source_root
   if (target_parent_idd.startsWith(target_var_dict.element_prefix)) {
     let docs = null;
     try {
-      docs = await target_var_dict.element_collection.lookupByKeys([target_parent_id]);
+      docs = await target_var_dict.element_collection.documents([target_parent_id]);
     } catch (err) {
       return Promise.reject('Failed to get target parent element from DB: ' + get_sj_error_message(err));
     }
@@ -2517,7 +2517,7 @@ var getElement = async function(root_type, elem_id) {
   let var_dict = get_root_specific_variables(root_type);
   let docs = null;
   try {
-    docs = await var_dict.element_collection.lookupByKeys([elem_id]);
+    docs = await var_dict.element_collection.documents([elem_id]);
   } catch (err) {
     return Promise.reject('Failed to get element from DB: ' + get_sj_error_message(err));
   }
@@ -2763,13 +2763,13 @@ var deleteElement = async function(root_type, elem_id, check_redline) {
 
     try {
       if (element_keys.length > 0) {
-        await var_dict.element_collection.removeByKeys(element_keys);
+        await var_dict.element_collection.removeAll(element_keys);
       }
       if (step_order_keys.length > 0) {
-        await var_dict.step_order_collection.removeByKeys(step_order_keys);
+        await var_dict.step_order_collection.removeAll(step_order_keys);
       }
       if (run_record_keys.length > 0 && var_dict.run_record_collection) {
-        await var_dict.run_record_collection.removeByKeys(run_record_keys);
+        await var_dict.run_record_collection.removeAll(run_record_keys);
       }
       if (elems_to_update.length > 0) {
         await var_dict.element_collection.updateAll(elems_to_update);

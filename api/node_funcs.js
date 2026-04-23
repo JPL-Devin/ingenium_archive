@@ -598,7 +598,7 @@ var createExecution = async function (execution_input) {
 
   let venues = null;
   try {
-    venues = await venue_collection.lookupByKeys([venue_id]);
+    venues = await venue_collection.documents([venue_id]);
   } catch (err) {
     return Promise.reject('Failed to get venue from DB: ' + get_sj_error_message(err));
   }
@@ -702,7 +702,7 @@ var deleteExecution = async function (execution_id) {
   let res = null;
 
   try {
-    docs = await execution_collection.lookupByKeys([execution_id]);
+    docs = await execution_collection.documents([execution_id]);
   } catch (err) {
     return Promise.reject('Failed to find execution in DB: ' + get_sj_error_message(err));
   }
@@ -755,10 +755,10 @@ var deleteExecution = async function (execution_id) {
   }
 
   try {
-    await execution_collection.removeByKeys([execution_id]);
-    await element_collection.removeByKeys(elem_keys);
-    await step_order_collection.removeByKeys(step_order_keys);
-    await run_record_collection.removeByKeys(run_record_keys);
+    await execution_collection.removeAll([execution_id]);
+    await element_collection.removeAll(elem_keys);
+    await step_order_collection.removeAll(step_order_keys);
+    await run_record_collection.removeAll(run_record_keys);
   } catch (err) {
     return Promise.reject('Failed to remove elements data from DB: ' + get_sj_error_message(err));
   }
@@ -1125,7 +1125,7 @@ var updateUsedProcedures = async function (execution_id) {
 var getExecution = async function (execution_id) {
   let docs = null;
   try {
-    docs = await execution_collection.lookupByKeys([execution_id]);
+    docs = await execution_collection.documents([execution_id]);
   } catch (err) {
     return Promise.reject('Failed to get execution from DB: ' + get_sj_error_message(err));
   }
@@ -1513,7 +1513,7 @@ var getVenueGroups = async function (offset, limit, sort, status, venue_group_na
 var getVenueGroup = async function(venue_group_id) {
   let venue_groups = null;
   try {
-    venue_groups = await venue_group_collection.lookupByKeys([venue_group_id]);
+    venue_groups = await venue_group_collection.documents([venue_group_id]);
   } catch (err) {
     return Promise.reject(get_sj_error_message(err));
   }
@@ -1750,7 +1750,7 @@ var getVenueTypeForExecution = async function (execution_id) {
 var getVenue = async function(venue_id) {
   let venues = null;
   try {
-    venues = await venue_collection.lookupByKeys([venue_id]);
+    venues = await venue_collection.documents([venue_id]);
   } catch (err) {
     return Promise.reject(get_sj_error_message(err));
   }
@@ -1765,7 +1765,7 @@ var getVenue = async function(venue_id) {
     const venue = venues[0]
     let venue_group_name = '';
     if (venue.venue_group_id) {
-      const venue_groups = await venue_group_collection.lookupByKeys([venue.venue_group_id]);
+      const venue_groups = await venue_group_collection.documents([venue.venue_group_id]);
       if (venue_groups.length == 0) {
         log.warning(`Venue group was not found for venue_id: ${venue_id}. venue_group_id: ${venue.venue_group_id}`);
       } else if (venue_groups.length > 1) {
@@ -1848,7 +1848,7 @@ var createVenue = async function(venueInput) {
  */
 var deleteVenue = async function(venue_id) {
   try {
-    await venue_collection.removeByKeys([venue_id]);
+    await venue_collection.removeAll([venue_id]);
     return Promise.resolve();
   } catch (err) {
     return Promise.reject('Failed to delete venue from DB: ' + get_sj_error_message(err)); 
@@ -2987,10 +2987,10 @@ var discardElements = async function(execution_id, elem_ids) {
 
   try {
     if (element_keys.length > 0) {
-      await var_dict.element_collection.removeByKeys(element_keys);
+      await var_dict.element_collection.removeAll(element_keys);
     }
     if (step_order_keys.length > 0) {
-      await var_dict.step_order_collection.removeByKeys(step_order_keys);
+      await var_dict.step_order_collection.removeAll(step_order_keys);
     }
 
     if (elems_to_update.length > 0) {

@@ -514,7 +514,7 @@ var createProcedureLabel = async function(procedureLabelInput) {
  */
 var deleteProcedureLabel = async function(label_id) {
   try {
-    await procedure_label_collection.removeByKeys([label_id]);
+    await procedure_label_collection.removeAll([label_id]);
   } catch (err) {
     return Promise.reject('Failed to delete venue from DB: ' + get_sj_error_message(err)); 
   }
@@ -1183,7 +1183,7 @@ var parseProcedureElementsAndEdges = function (parent, elems, step_order_edges) 
 var getProcedure = async function (procedure_id) {
   let docs = null;
   try {
-    docs = await procedure_collection.lookupByKeys([procedure_id]);
+    docs = await procedure_collection.documents([procedure_id]);
   } catch (err) {
     let msg = 'Failed to find procedure. procedure_id: {0} Reason: {1}'.format(procedure_id, get_sj_error_message(err));
     log.error(msg);      
@@ -1222,7 +1222,7 @@ var deleteProcedure = async function (procedure_id) {
   var target_id = 'procedure/' + procedure_id;
   let docs = null;
   try {
-    docs = await procedure_collection.lookupByKeys([procedure_id]);
+    docs = await procedure_collection.documents([procedure_id]);
   } catch (err) {
     return Promise.reject('Failed to find procedure: ' + get_sj_error_message(err));
   }
@@ -1284,11 +1284,11 @@ var deleteProcedure = async function (procedure_id) {
   }
 
   try {
-    await procedure_collection.removeByKeys([procedure_id]);
-    await procedure_element_collection.removeByKeys(elem_keys);
-    await procedure_version_collection.removeByKeys(version_keys);
-    await procedure_step_order_collection.removeByKeys(step_order_keys);
-    await has_version_collection.removeByKeys(has_version_keys);
+    await procedure_collection.removeAll([procedure_id]);
+    await procedure_element_collection.removeAll(elem_keys);
+    await procedure_version_collection.removeAll(version_keys);
+    await procedure_step_order_collection.removeAll(step_order_keys);
+    await has_version_collection.removeAll(has_version_keys);
   } catch (err) {
     return Promise.reject('Failed to delete procedure data from DB: ' + get_sj_error_message(err)); 
   }
@@ -1633,12 +1633,12 @@ var deleteProcedureVersion = async function (procedure_id, version, force=false)
   }
 
   // delete vertices
-  await procedure_version_collection.removeByKeys([version_id]);
-  await procedure_element_collection.removeByKeys(elem_keys);
+  await procedure_version_collection.removeAll([version_id]);
+  await procedure_element_collection.removeAll(elem_keys);
 
   // delete edges
-  await procedure_step_order_collection.removeByKeys(step_order_keys);        
-  await has_version_collection.removeByExample({'_to': version_idd});
+  await procedure_step_order_collection.removeAll(step_order_keys);        
+  await db.query(aql`FOR e IN ${has_version_collection} FILTER e._to == ${version_idd} REMOVE e IN ${has_version_collection}`);
 
   // force is true when procedure is imported. If so, do not update time_saved
   if (!force) {
