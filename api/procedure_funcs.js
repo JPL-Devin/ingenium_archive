@@ -1184,6 +1184,7 @@ var getProcedure = async function (procedure_id) {
   let docs = null;
   try {
     docs = await procedure_collection.documents([procedure_id]);
+    docs = docs.filter(d => !d.error);
   } catch (err) {
     let msg = 'Failed to find procedure. procedure_id: {0} Reason: {1}'.format(procedure_id, get_sj_error_message(err));
     log.error(msg);      
@@ -1223,6 +1224,7 @@ var deleteProcedure = async function (procedure_id) {
   let docs = null;
   try {
     docs = await procedure_collection.documents([procedure_id]);
+    docs = docs.filter(d => !d.error);
   } catch (err) {
     return Promise.reject('Failed to find procedure: ' + get_sj_error_message(err));
   }

@@ -599,6 +599,7 @@ var createExecution = async function (execution_input) {
   let venues = null;
   try {
     venues = await venue_collection.documents([venue_id]);
+    venues = venues.filter(d => !d.error);
   } catch (err) {
     return Promise.reject('Failed to get venue from DB: ' + get_sj_error_message(err));
   }
@@ -703,6 +704,7 @@ var deleteExecution = async function (execution_id) {
 
   try {
     docs = await execution_collection.documents([execution_id]);
+    docs = docs.filter(d => !d.error);
   } catch (err) {
     return Promise.reject('Failed to find execution in DB: ' + get_sj_error_message(err));
   }
@@ -1126,6 +1128,7 @@ var getExecution = async function (execution_id) {
   let docs = null;
   try {
     docs = await execution_collection.documents([execution_id]);
+    docs = docs.filter(d => !d.error);
   } catch (err) {
     return Promise.reject('Failed to get execution from DB: ' + get_sj_error_message(err));
   }
@@ -1514,6 +1517,7 @@ var getVenueGroup = async function(venue_group_id) {
   let venue_groups = null;
   try {
     venue_groups = await venue_group_collection.documents([venue_group_id]);
+    venue_groups = venue_groups.filter(d => !d.error);
   } catch (err) {
     return Promise.reject(get_sj_error_message(err));
   }
@@ -1751,6 +1755,7 @@ var getVenue = async function(venue_id) {
   let venues = null;
   try {
     venues = await venue_collection.documents([venue_id]);
+    venues = venues.filter(d => !d.error);
   } catch (err) {
     return Promise.reject(get_sj_error_message(err));
   }
@@ -1765,7 +1770,8 @@ var getVenue = async function(venue_id) {
     const venue = venues[0]
     let venue_group_name = '';
     if (venue.venue_group_id) {
-      const venue_groups = await venue_group_collection.documents([venue.venue_group_id]);
+      let venue_groups = await venue_group_collection.documents([venue.venue_group_id]);
+      venue_groups = venue_groups.filter(d => !d.error);
       if (venue_groups.length == 0) {
         log.warning(`Venue group was not found for venue_id: ${venue_id}. venue_group_id: ${venue.venue_group_id}`);
       } else if (venue_groups.length > 1) {
