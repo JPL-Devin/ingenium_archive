@@ -124,7 +124,7 @@ var getProcedures = async function(offset, limit, title, description, procedure_
   let cursor = null;
   let data = null;
   try {
-    cursor = await db.query(q_str, {}, {'count': true, 'fullCount': true});
+    cursor = await db.query(q_str, {count: true, fullCount: true});
     data = await cursor.all();
   } catch (err) {
     let msg = 'Failed to get procedures from DB: {0}'.format(get_sj_error_message(err));
@@ -1709,7 +1709,7 @@ var getProcedureVersions = async function(procedure_id, offset, limit, version_d
   let cursor = null;
   let data = null;
   try {
-    cursor = await db.query(q_str, {}, {'count': true, 'fullCount': true});
+    cursor = await db.query(q_str, {count: true, fullCount: true});
     data = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get procedure versions from DB: ' + get_sj_error_message(err)); 
@@ -1755,7 +1755,7 @@ var getElementsFromProcedure = async function (procedure_id, elem_type, step_typ
   let cursor = null;
   let data = null;
   try {
-    cursor = await db.query(query_str, {}, {"count": true});
+    cursor = await db.query(query_str, {count: true});
     data = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get procedure elements from DB: ' + get_sj_error_message(err)); 

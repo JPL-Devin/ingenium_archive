@@ -1396,7 +1396,7 @@ FOR doc in execution
   q_str = removeEmptyLines(q_str);
 
   try {
-    cursor = await db.query(q_str, {}, {'count': true, 'fullCount': true});
+    cursor = await db.query(q_str, {count: true, fullCount: true});
     data = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get executions from DB: ' + get_sj_error_message(err)); 
@@ -1497,7 +1497,7 @@ var getVenueGroups = async function (offset, limit, sort, status, venue_group_na
   log.trace(`getVenueGroups q_str: ${q_str}`);
 
   try {
-    const cursor = await db.query(q_str, {}, {'count': true, 'fullCount': true});
+    const cursor = await db.query(q_str, {count: true, fullCount: true});
     const data = await cursor.all();
     // fullCount is returned only when LIMIT is used in query. If it is not available, use count instead.
     const fullCount = cursor.extra.stats.hasOwnProperty('fullCount') ? cursor.extra.stats.fullCount : cursor.count;
@@ -1640,7 +1640,7 @@ var getVenues = async function (offset, limit, sort, status, exclude_status, des
   log.trace(`getVenues q_str: ${q_str}`);
 
   try {
-    const cursor = await db.query(q_str, {}, {'count': true, 'fullCount': true});
+    const cursor = await db.query(q_str, {count: true, fullCount: true});
     const data = await cursor.all();
 
     // fullCount is returned only when LIMIT is used in query. If it is not available, use count instead.
@@ -1700,7 +1700,7 @@ var getProcedureLabels = async function (offset, limit, sort, name, description)
   log.trace(`getProcedureLabels q_str: ${q_str}`);  
 
   try {
-    const cursor = await db.query(q_str, {}, {'count': true, 'fullCount': true});
+    const cursor = await db.query(q_str, {count: true, fullCount: true});
     const data = await cursor.all();
     // fullCount is returned only when LIMIT is used in query. If it is not available, use count instead.
     const fullCount = cursor.extra.stats.hasOwnProperty('fullCount') ? cursor.extra.stats.fullCount : cursor.count;
@@ -1730,7 +1730,7 @@ var getVenueTypeForExecution = async function (execution_id) {
   let cursor = null;
   let data = null;
   try {
-    cursor = await db.query(q_str, {}, {'count': true, 'fullCount': true});
+    cursor = await db.query(q_str, {count: true, fullCount: true});
     data = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get executions from DB: ' + get_sj_error_message(err)); 
