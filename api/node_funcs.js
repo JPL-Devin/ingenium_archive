@@ -2,7 +2,8 @@
 
 // Constants
 
-var uuid = require('node-uuid');
+var uuid = require('uuid');
+var { aql } = require('arangojs');
 var jwt = require('jsonwebtoken');
 var extend = require('extend');
 var deepcopy = require('deepcopy');
@@ -129,7 +130,7 @@ var importProcedureSection = async function(elem_id) {
 
   // Delete any child elements starting with immediate children
   try {
-    cursor = await step_order_collection.byExample({'_from': procedure_section._id});
+    cursor = await db.query(aql`FOR e IN ${step_order_collection} FILTER e._from == ${procedure_section._id} RETURN e`);
     edges = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get element edge from DB: ' + get_sj_error_message(err));
@@ -538,7 +539,7 @@ var createNewRun = async function (step_id, output) {
   }
 
   try {
-    cursor = await run_record_collection.byExample({'_from': step_idd});
+    cursor = await db.query(aql`FOR e IN ${run_record_collection} FILTER e._from == ${step_idd} RETURN e`);
     edges = await cursor.all();
     await run_record_collection.save({'_from': step_idd, '_to': record_elem_idd, 'idx': edges.length})
   } catch (err) {
@@ -597,7 +598,8 @@ var createExecution = async function (execution_input) {
 
   let venues = null;
   try {
-    venues = await venue_collection.lookupByKeys([venue_id]);
+    venues = await venue_collection.documents([venue_id]);
+    venues = venues.filter(d => !d.error);
   } catch (err) {
     return Promise.reject('Failed to get venue from DB: ' + get_sj_error_message(err));
   }
@@ -701,7 +703,8 @@ var deleteExecution = async function (execution_id) {
   let res = null;
 
   try {
-    docs = await execution_collection.lookupByKeys([execution_id]);
+    docs = await execution_collection.documents([execution_id]);
+    docs = docs.filter(d => !d.error);
   } catch (err) {
     return Promise.reject('Failed to find execution in DB: ' + get_sj_error_message(err));
   }
@@ -754,10 +757,10 @@ var deleteExecution = async function (execution_id) {
   }
 
   try {
-    await execution_collection.removeByKeys([execution_id]);
-    await element_collection.removeByKeys(elem_keys);
-    await step_order_collection.removeByKeys(step_order_keys);
-    await run_record_collection.removeByKeys(run_record_keys);
+    await execution_collection.removeAll([execution_id]);
+    await element_collection.removeAll(elem_keys);
+    await step_order_collection.removeAll(step_order_keys);
+    await run_record_collection.removeAll(run_record_keys);
   } catch (err) {
     return Promise.reject('Failed to remove elements data from DB: ' + get_sj_error_message(err));
   }
@@ -1124,7 +1127,8 @@ var updateUsedProcedures = async function (execution_id) {
 var getExecution = async function (execution_id) {
   let docs = null;
   try {
-    docs = await execution_collection.lookupByKeys([execution_id]);
+    docs = await execution_collection.documents([execution_id]);
+    docs = docs.filter(d => !d.error);
   } catch (err) {
     return Promise.reject('Failed to get execution from DB: ' + get_sj_error_message(err));
   }
@@ -1392,7 +1396,7 @@ FOR doc in execution
   q_str = removeEmptyLines(q_str);
 
   try {
-    cursor = await db.query(q_str, {}, {'count': true, 'fullCount': true});
+    cursor = await db.query(q_str, {count: true, fullCount: true});
     data = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get executions from DB: ' + get_sj_error_message(err)); 
@@ -1493,7 +1497,7 @@ var getVenueGroups = async function (offset, limit, sort, status, venue_group_na
   log.trace(`getVenueGroups q_str: ${q_str}`);
 
   try {
-    const cursor = await db.query(q_str, {}, {'count': true, 'fullCount': true});
+    const cursor = await db.query(q_str, {count: true, fullCount: true});
     const data = await cursor.all();
     // fullCount is returned only when LIMIT is used in query. If it is not available, use count instead.
     const fullCount = cursor.extra.stats.hasOwnProperty('fullCount') ? cursor.extra.stats.fullCount : cursor.count;
@@ -1512,7 +1516,8 @@ var getVenueGroups = async function (offset, limit, sort, status, venue_group_na
 var getVenueGroup = async function(venue_group_id) {
   let venue_groups = null;
   try {
-    venue_groups = await venue_group_collection.lookupByKeys([venue_group_id]);
+    venue_groups = await venue_group_collection.documents([venue_group_id]);
+    venue_groups = venue_groups.filter(d => !d.error);
   } catch (err) {
     return Promise.reject(get_sj_error_message(err));
   }
@@ -1635,7 +1640,7 @@ var getVenues = async function (offset, limit, sort, status, exclude_status, des
   log.trace(`getVenues q_str: ${q_str}`);
 
   try {
-    const cursor = await db.query(q_str, {}, {'count': true, 'fullCount': true});
+    const cursor = await db.query(q_str, {count: true, fullCount: true});
     const data = await cursor.all();
 
     // fullCount is returned only when LIMIT is used in query. If it is not available, use count instead.
@@ -1695,7 +1700,7 @@ var getProcedureLabels = async function (offset, limit, sort, name, description)
   log.trace(`getProcedureLabels q_str: ${q_str}`);  
 
   try {
-    const cursor = await db.query(q_str, {}, {'count': true, 'fullCount': true});
+    const cursor = await db.query(q_str, {count: true, fullCount: true});
     const data = await cursor.all();
     // fullCount is returned only when LIMIT is used in query. If it is not available, use count instead.
     const fullCount = cursor.extra.stats.hasOwnProperty('fullCount') ? cursor.extra.stats.fullCount : cursor.count;
@@ -1725,7 +1730,7 @@ var getVenueTypeForExecution = async function (execution_id) {
   let cursor = null;
   let data = null;
   try {
-    cursor = await db.query(q_str, {}, {'count': true, 'fullCount': true});
+    cursor = await db.query(q_str, {count: true, fullCount: true});
     data = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get executions from DB: ' + get_sj_error_message(err)); 
@@ -1749,7 +1754,8 @@ var getVenueTypeForExecution = async function (execution_id) {
 var getVenue = async function(venue_id) {
   let venues = null;
   try {
-    venues = await venue_collection.lookupByKeys([venue_id]);
+    venues = await venue_collection.documents([venue_id]);
+    venues = venues.filter(d => !d.error);
   } catch (err) {
     return Promise.reject(get_sj_error_message(err));
   }
@@ -1764,7 +1770,8 @@ var getVenue = async function(venue_id) {
     const venue = venues[0]
     let venue_group_name = '';
     if (venue.venue_group_id) {
-      const venue_groups = await venue_group_collection.lookupByKeys([venue.venue_group_id]);
+      let venue_groups = await venue_group_collection.documents([venue.venue_group_id]);
+      venue_groups = venue_groups.filter(d => !d.error);
       if (venue_groups.length == 0) {
         log.warning(`Venue group was not found for venue_id: ${venue_id}. venue_group_id: ${venue.venue_group_id}`);
       } else if (venue_groups.length > 1) {
@@ -1847,7 +1854,7 @@ var createVenue = async function(venueInput) {
  */
 var deleteVenue = async function(venue_id) {
   try {
-    await venue_collection.removeByKeys([venue_id]);
+    await venue_collection.removeAll([venue_id]);
     return Promise.resolve();
   } catch (err) {
     return Promise.reject('Failed to delete venue from DB: ' + get_sj_error_message(err)); 
@@ -2467,7 +2474,7 @@ var modifyElement = async function(execution_id, elem_id) {
   elem_original = elem;
     
   try {
-    cursor = await step_order_collection.byExample({'_to': elem_idd});
+    cursor = await db.query(aql`FOR e IN ${step_order_collection} FILTER e._to == ${elem_idd} RETURN e`);
     edges = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get parent element from DB: ' + get_sj_error_message(err)); 
@@ -2986,10 +2993,10 @@ var discardElements = async function(execution_id, elem_ids) {
 
   try {
     if (element_keys.length > 0) {
-      await var_dict.element_collection.removeByKeys(element_keys);
+      await var_dict.element_collection.removeAll(element_keys);
     }
     if (step_order_keys.length > 0) {
-      await var_dict.step_order_collection.removeByKeys(step_order_keys);
+      await var_dict.step_order_collection.removeAll(step_order_keys);
     }
 
     if (elems_to_update.length > 0) {

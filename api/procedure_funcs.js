@@ -1,7 +1,7 @@
 'use strict'
-var uuid = require('node-uuid');
+var uuid = require('uuid');
 var deepcopy = require('deepcopy');
-var arangojs = require('arangojs');
+var { aql } = require('arangojs');
 var extend = require('extend');
 var util = require('util');
 const removeEmptyLines = require("remove-blank-lines");
@@ -124,7 +124,7 @@ var getProcedures = async function(offset, limit, title, description, procedure_
   let cursor = null;
   let data = null;
   try {
-    cursor = await db.query(q_str, {}, {'count': true, 'fullCount': true});
+    cursor = await db.query(q_str, {count: true, fullCount: true});
     data = await cursor.all();
   } catch (err) {
     let msg = 'Failed to get procedures from DB: {0}'.format(get_sj_error_message(err));
@@ -514,7 +514,7 @@ var createProcedureLabel = async function(procedureLabelInput) {
  */
 var deleteProcedureLabel = async function(label_id) {
   try {
-    await procedure_label_collection.removeByKeys([label_id]);
+    await procedure_label_collection.removeAll([label_id]);
   } catch (err) {
     return Promise.reject('Failed to delete venue from DB: ' + get_sj_error_message(err)); 
   }
@@ -991,7 +991,7 @@ async function _loadWorkingCopy(procedure_id, source_procedure_id, source_proced
 
   // Step 1: Get the current working copy and delete all elements of it
   try {
-    cursor = await procedure_step_order_collection.byExample({'_from': working_copy_doc._id});
+    cursor = await db.query(aql`FOR e IN ${procedure_step_order_collection} FILTER e._from == ${working_copy_doc._id} RETURN e`);
     edges = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get step order: ' + get_sj_error_message(err)); 
@@ -1183,7 +1183,8 @@ var parseProcedureElementsAndEdges = function (parent, elems, step_order_edges) 
 var getProcedure = async function (procedure_id) {
   let docs = null;
   try {
-    docs = await procedure_collection.lookupByKeys([procedure_id]);
+    docs = await procedure_collection.documents([procedure_id]);
+    docs = docs.filter(d => !d.error);
   } catch (err) {
     let msg = 'Failed to find procedure. procedure_id: {0} Reason: {1}'.format(procedure_id, get_sj_error_message(err));
     log.error(msg);      
@@ -1222,7 +1223,8 @@ var deleteProcedure = async function (procedure_id) {
   var target_id = 'procedure/' + procedure_id;
   let docs = null;
   try {
-    docs = await procedure_collection.lookupByKeys([procedure_id]);
+    docs = await procedure_collection.documents([procedure_id]);
+    docs = docs.filter(d => !d.error);
   } catch (err) {
     return Promise.reject('Failed to find procedure: ' + get_sj_error_message(err));
   }
@@ -1284,11 +1286,11 @@ var deleteProcedure = async function (procedure_id) {
   }
 
   try {
-    await procedure_collection.removeByKeys([procedure_id]);
-    await procedure_element_collection.removeByKeys(elem_keys);
-    await procedure_version_collection.removeByKeys(version_keys);
-    await procedure_step_order_collection.removeByKeys(step_order_keys);
-    await has_version_collection.removeByKeys(has_version_keys);
+    await procedure_collection.removeAll([procedure_id]);
+    await procedure_element_collection.removeAll(elem_keys);
+    await procedure_version_collection.removeAll(version_keys);
+    await procedure_step_order_collection.removeAll(step_order_keys);
+    await has_version_collection.removeAll(has_version_keys);
   } catch (err) {
     return Promise.reject('Failed to delete procedure data from DB: ' + get_sj_error_message(err)); 
   }
@@ -1417,7 +1419,7 @@ var getProcedureVersion = async function (procedure_id, version) {
   let cursor = null;
   let docs = null;
   try {
-    cursor = await procedure_version_collection.byExample({'procedure_id': procedure_id, 'version': version});
+    cursor = await db.query(aql`FOR d IN ${procedure_version_collection} FILTER d.procedure_id == ${procedure_id} AND d.version == ${version} RETURN d`);
     docs = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get procedure version from DB: ' + get_sj_error_message(err)); 
@@ -1572,7 +1574,7 @@ var deleteProcedureVersion = async function (procedure_id, version, force=false)
   let cursor = null;
   let docs = null;
   try {
-    cursor = await procedure_version_collection.byExample({'procedure_id': procedure_id, 'version': version});
+    cursor = await db.query(aql`FOR d IN ${procedure_version_collection} FILTER d.procedure_id == ${procedure_id} AND d.version == ${version} RETURN d`);
     docs = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get procedure version from DB: ' + get_sj_error_message(err)); 
@@ -1633,12 +1635,12 @@ var deleteProcedureVersion = async function (procedure_id, version, force=false)
   }
 
   // delete vertices
-  await procedure_version_collection.removeByKeys([version_id]);
-  await procedure_element_collection.removeByKeys(elem_keys);
+  await procedure_version_collection.removeAll([version_id]);
+  await procedure_element_collection.removeAll(elem_keys);
 
   // delete edges
-  await procedure_step_order_collection.removeByKeys(step_order_keys);        
-  await has_version_collection.removeByExample({'_to': version_idd});
+  await procedure_step_order_collection.removeAll(step_order_keys);        
+  await db.query(aql`FOR e IN ${has_version_collection} FILTER e._to == ${version_idd} REMOVE e IN ${has_version_collection}`);
 
   // force is true when procedure is imported. If so, do not update time_saved
   if (!force) {
@@ -1707,7 +1709,7 @@ var getProcedureVersions = async function(procedure_id, offset, limit, version_d
   let cursor = null;
   let data = null;
   try {
-    cursor = await db.query(q_str, {}, {'count': true, 'fullCount': true});
+    cursor = await db.query(q_str, {count: true, fullCount: true});
     data = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get procedure versions from DB: ' + get_sj_error_message(err)); 
@@ -1753,7 +1755,7 @@ var getElementsFromProcedure = async function (procedure_id, elem_type, step_typ
   let cursor = null;
   let data = null;
   try {
-    cursor = await db.query(query_str, {}, {"count": true});
+    cursor = await db.query(query_str, {count: true});
     data = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get procedure elements from DB: ' + get_sj_error_message(err)); 
@@ -2439,11 +2441,7 @@ var findProcedureVersion = async function(version_id) {
   let cursor = null;
   let procedure_versions = [];  
   try {
-    cursor = await procedure_version_collection.byExample(
-      {
-        'version_id': version_id
-      }
-    );
+    cursor = await db.query(aql`FOR d IN ${procedure_version_collection} FILTER d.version_id == ${version_id} RETURN d`);
     procedure_versions = await cursor.all();
   } catch (err) {
     return Promise.reject('Failed to get procedure sections from DB: ' + get_sj_error_message(err));

@@ -1,4 +1,4 @@
-var arangojs = require('arangojs');
+var { Database } = require('arangojs');
 var base_funcs = require('./api/base_funcs');
 var node_funcs = require('./api/node_funcs');
 var procedure_funcs = require('./api/procedure_funcs');
@@ -7,13 +7,8 @@ const config = require('./config');
 var get_sj_error_message = base_funcs.get_sj_error_message;
 var verbose = false;
 
-var db = arangojs(config.db_url);
-
-// console.log(`db_user: ${db_user}`);
-// console.log(`db_password: ${db_password}`);
-
-db.useBasicAuth(config.db_user, config.db_password);
-db.useDatabase(config.database_name);
+var systemDb = new Database({ url: config.db_url, auth: { username: config.db_user, password: config.db_password } });
+var db = systemDb.database(config.database_name);
 
 function get_padded_number(number_str, delimiter) {
   const segments = number_str.split(delimiter);
